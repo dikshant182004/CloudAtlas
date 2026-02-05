@@ -1,0 +1,9 @@
+/* Debug styles to ensure background is visible */
+.cloudatlas-chat-bg {
+  background: red !important; /* Temporary debug color */
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+}
+
+/* Remove this after confirming background works */

@@ -1,0 +1,393 @@
+@import "tailwindcss";
+@import "../debug-background.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Tailwind CSS Variables customized with tambo colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Tambo Specific Variables needed for tambo components */
+  --color-container: var(--container);
+  --color-backdrop: var(--backdrop);
+  --color-muted-backdrop: var(--muted-backdrop);
+}
+
+:root {
+  /* Default Tailwind CSS Variables customized with tambo colors */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.14 0 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.14 0 285);
+  --primary: oklch(0.31 0.02 281);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.54 0.027 261);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.92 0 260);
+  --muted-foreground: oklch(0.73 0.022 260);
+  --accent: oklch(0.97 0 286);
+  --accent-foreground: oklch(0.21 0 286);
+  --destructive: oklch(0.64 0.2 25);
+  --border: oklch(0.93 0 242);
+  --input: oklch(0.92 0 286);
+  --ring: oklch(0.14 0 285);
+  --chart-1: oklch(0.72 0.15 60);
+  --chart-2: oklch(0.62 0.2 6);
+  --chart-3: oklch(0.53 0.2 262);
+  --chart-4: oklch(0.7 0.13 165);
+  --chart-5: oklch(0.62 0.2 313);
+
+  /* Tambo Specific Variables needed for tambo components */
+  --container: oklch(0.98 0 247);
+  --backdrop: oklch(0.25 0.07 252 / 0.25);
+  --muted-backdrop: oklch(0.25 0.07 252 / 0.1);
+  --radius: 0.5rem;
+  --panel-left-width: 500px;
+  --panel-right-width: 500px;
+  --sidebar-width: 3rem;
+}
+
+.dark {
+  /* Dark Mode Tailwind CSS Variables customized with tambo colors */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.72 0.15 60);
+  --chart-2: oklch(0.62 0.2 6);
+  --chart-3: oklch(0.53 0.2 262);
+  --chart-4: oklch(0.7 0.13 165);
+  --chart-5: oklch(0.62 0.2 313);
+
+  /* Tambo Specific Variables needed for tambo components */
+  --container: oklch(0.98 0 247);
+  --backdrop: oklch(0.25 0.07 252 / 0.25);
+  --muted-backdrop: oklch(0.25 0.07 252 / 0.1);
+  --radius: 0.5rem;
+  --panel-left-width: 500px;
+  --panel-right-width: 500px;
+  --sidebar-width: 3rem;
+}
+
+/* CloudAtlas workspace: charcoal/slate/graphite theme */
+.cloudatlas,
+.cloudatlas .dark {
+  --background: oklch(0.18 0.01 260);
+  --foreground: oklch(0.92 0.01 260);
+  --card: oklch(0.22 0.01 260);
+  --card-foreground: oklch(0.92 0.01 260);
+  --border: oklch(0.35 0.02 260 / 0.6);
+  --muted: oklch(0.28 0.01 260);
+  --muted-foreground: oklch(0.65 0.02 260);
+  --primary: oklch(0.55 0.12 250);
+  --primary-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.45 0.08 250);
+  --accent-foreground: oklch(0.98 0 0);
+  --ring: oklch(0.5 0.1 250);
+  --canvas-bg: oklch(0.15 0.01 260);
+  --canvas-grid: oklch(0.25 0.02 260 / 0.15);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}
+
+/*
+This is a custom animation for the interactable components.
+It's used to highlight the fields that have been updated.
+You can remove this if you don't want to use it.
+*/
+
+@keyframes flash {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgb(59 130 246 / 0.3);
+  }
+}
+
+.animate-flash {
+  animation: flash 1s ease-in-out;
+}
+
+/*
+Animated gradient for thinking text, creates a shimmering effect that moves across the text.
+*/
+@keyframes thinking-gradient {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-thinking-gradient {
+  /* Fallback */
+  background: linear-gradient(90deg, #666 0%, #bbb 50%, #666 100%);
+  /* Preferred (overrides when supported) */
+  background: linear-gradient(
+    90deg,
+    oklch(0.14 0 0) 0%,
+    oklch(0.7 0 0) 50%,
+    oklch(0.14 0 0) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-gradient 2s linear infinite;
+}
+
+/* CloudAtlas canvas background */
+.cloudatlas-canvas {
+  background-color: var(--canvas-bg, oklch(0.15 0.01 260));
+  background-image:
+    linear-gradient(var(--canvas-grid, oklch(0.25 0.02 260 / 0.12)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid, oklch(0.25 0.02 260 / 0.12)) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Assistant character animations */
+@keyframes assistant-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes assistant-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+@keyframes assistant-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes assistant-bounce {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  60% { transform: scale(0.95); }
+}
+@keyframes assistant-progress {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+.assistant-idle { animation: assistant-float 3s ease-in-out infinite; }
+.assistant-thinking { animation: assistant-pulse 1.2s ease-in-out infinite; }
+.assistant-tool { animation: assistant-spin 2s linear infinite; }
+.assistant-complete { animation: assistant-bounce 0.5s ease-out; }
+
+/* ========== CloudAtlas Chat Shell: Neo4j-style dark theme ========== */
+.cloudatlas-chat-shell.dark {
+  /* Neo4j-style palette: deep charcoal base, darker sidebar, muted cyan/teal */
+  --ca-base: #0d1117;
+  --ca-secondary: #161b22;
+  --ca-surface: #21262d;
+  --ca-border: #30363d;
+  --ca-cyan: #58a6ff;
+  --ca-teal: #3fb950;
+  --ca-text: #e6edf3;
+  --ca-text-muted: #8b949e;
+  --background: var(--ca-base);
+  --foreground: var(--ca-text);
+  --card: var(--ca-secondary);
+  --card-foreground: var(--ca-text);
+  --border: var(--ca-border);
+  --muted: var(--ca-surface);
+  --muted-foreground: var(--ca-text-muted);
+  --primary: var(--ca-cyan);
+  --primary-foreground: #0d1117;
+  --accent: var(--ca-teal);
+  --accent-foreground: #0d1117;
+  --input: var(--ca-surface);
+  --ring: var(--ca-cyan);
+  /* Sidebar and containers: so sidebar is dark, not white */
+  --container: #161b22;
+  --backdrop: rgba(48, 54, 61, 0.6);
+  --muted-backdrop: rgba(48, 54, 61, 0.35);
+}
+
+/* Light theme: ensure chat shell uses clean defaults (already from :root) */
+.cloudatlas-chat-shell:not(.dark) {
+  --ca-brand: #0969da;
+  --ca-brand-muted: rgba(9, 105, 218, 0.12);
+  --orb-glow: rgba(9, 105, 218, 0.35);
+  --orb-fill: rgba(9, 105, 218, 0.18);
+  --orb-line: rgba(9, 105, 218, 0.55);
+  --orb-teal: rgba(26, 127, 55, 0.5);
+  --orb-purple: rgba(88, 66, 124, 0.45);
+}
+
+.cloudatlas-chat-shell.dark {
+  --orb-glow: rgba(88, 166, 255, 0.4);
+  --orb-fill: rgba(88, 166, 255, 0.08);
+  --orb-line: rgba(88, 166, 255, 0.35);
+  --orb-teal: rgba(63, 185, 80, 0.25);
+  --orb-purple: rgba(163, 113, 247, 0.2);
+}
+
+/* CloudAtlas chat: interactive background */
+@keyframes cloudatlas-shimmer {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.6; }
+}
+/* Light: subtle grid and gradient so it doesn’t look empty */
+.cloudatlas-chat-shell .cloudatlas-chat-bg {
+  position: fixed !important;
+  inset: 0 !important;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.78 0.06 250 / 0.14), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 80%, oklch(0.75 0.04 200 / 0.1), transparent),
+    linear-gradient(180deg, transparent 0%, oklch(0.97 0.01 260 / 0.04) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+  transition: background-color 0.3s ease, background-image 0.3s ease;
+  z-index: -1;
+}
+.cloudatlas-chat-shell:not(.dark) .cloudatlas-chat-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(oklch(0.92 0.01 260 / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.92 0.01 260 / 0.5) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+/* Neo4j dark: deep charcoal #0d1117, subtle cloud layers, visible grid + topology */
+.cloudatlas-chat-shell.dark .cloudatlas-chat-bg {
+  background-color: #0d1117;
+  background-image:
+    radial-gradient(ellipse 120% 70% at 10% 0%, rgba(22, 27, 34, 0.95) 0%, transparent 45%),
+    radial-gradient(ellipse 90% 60% at 95% 100%, rgba(33, 38, 45, 0.8) 0%, transparent 45%),
+    radial-gradient(ellipse 70% 50% at 50% 50%, rgba(88, 166, 255, 0.04) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(13, 17, 23, 0.98) 0%, transparent 15%, transparent 85%, rgba(13, 17, 23, 0.97) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+}
+/* Grid layer - more visible so background doesn’t look empty */
+.cloudatlas-chat-shell .cloudatlas-chat-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(oklch(0.5 0.02 260 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.5 0.02 260 / 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  animation: cloudatlas-shimmer 10s ease-in-out infinite;
+  pointer-events: none;
+}
+.cloudatlas-chat-shell.dark .cloudatlas-chat-bg::before {
+  background-image:
+    linear-gradient(rgba(48, 54, 61, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 54, 61, 0.4) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 1;
+}
+/* Extra topology: subtle diagonal lines so it feels less empty */
+.cloudatlas-chat-shell.dark .cloudatlas-chat-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(105deg, rgba(48, 54, 61, 0.12) 1px, transparent 1px),
+    linear-gradient(75deg, rgba(48, 54, 61, 0.08) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+}
+
+/* Orb animations: breathing glow, orbit, pulse, sparkle */
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes orb-glow-breathe {
+  0%, 100% { filter: drop-shadow(0 0 12px var(--orb-glow)); opacity: 0.92; }
+  50% { filter: drop-shadow(0 0 20px var(--orb-glow)); opacity: 1; }
+}
+@keyframes orb-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes orb-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 14px var(--orb-glow)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 24px var(--orb-glow)); }
+}
+@keyframes orb-sparkle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.12); opacity: 0.95; }
+  70% { transform: scale(1.05); opacity: 1; }
+}
+.orb-idle { animation: orb-float 4s ease-in-out infinite, orb-glow-breathe 3s ease-in-out infinite; }
+.orb-thinking .orb-inner { animation: orb-orbit 4s linear infinite; }
+.orb-tool { animation: orb-pulse 1.4s ease-in-out infinite; }
+.orb-complete { animation: orb-sparkle 0.6s ease-out; }
+
+/* Dark theme: sidebar and panels use dark container; sidebar border visible */
+.cloudatlas-chat-shell.dark [class*="border-flat"] {
+  border-color: #30363d;
+}
+/* Chat content: let elevated surface show through */
+.cloudatlas-chat-shell.dark .cloudatlas-chat-main [class*="bg-background"] {
+  background-color: transparent;
+}
+.cloudatlas-chat-shell.dark a {
+  color: #58a6ff;
+}
+.cloudatlas-chat-shell.dark code {
+  background-color: #161B22;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+}
+.cloudatlas-chat-shell.dark textarea,
+.cloudatlas-chat-shell.dark input[type="text"] {
+  background-color: #161B22;
+  border-color: #30363d;
+  color: #e6edf3;
+}
+.cloudatlas-chat-shell.dark textarea::placeholder {
+  color: #8b949e;
+}
