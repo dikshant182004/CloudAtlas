@@ -1,8 +1,9 @@
 "use client";
 
 import { MessageThreadFull } from "@/components/tambo/message-thread-full";
+import { DemoPromptsPanel } from "./demo-prompts-panel";
 import { cn } from "@/lib/utils";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import * as React from "react";
 import { AssistantCharacter } from "./assistant-character";
 
@@ -14,22 +15,24 @@ export interface CloudAtlasChatShellProps {
 }
 
 /**
- * CloudAtlas chat shell: branding, theme toggle (light default), interactive background, floating assistant.
+ * CloudAtlas chat shell: branding, theme toggle (dark default), interactive background, floating assistant.
  * Wraps chat content with header and theme-aware layout.
  */
 export function CloudAtlasChatShell({
   children,
   className,
 }: CloudAtlasChatShellProps) {
-  // Default to light theme for better background visibility; override from localStorage if the user chose dark
-  const [dark, setDark] = React.useState(false);
+  // Default to dark theme; override from localStorage if user chose light
+  const [dark, setDark] = React.useState(true);
   const [assistantVisible, setAssistantVisible] = React.useState(true);
+  const [promptsPanelVisible, setPromptsPanelVisible] = React.useState(true);
+  const inputRef = React.useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   React.useEffect(() => {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "dark") setDark(true);
-    else if (stored === "light") setDark(false);
-    else setDark(false); // default to light theme for better background visibility
+    if (stored === "light") setDark(false);
+    else if (stored === "dark") setDark(true);
+    else setDark(true); // default to dark theme
   }, []);
 
   const toggleTheme = React.useCallback(() => {
@@ -110,20 +113,51 @@ export function CloudAtlasChatShell({
         {children ?? (
           <div
             className={cn(
-              "cloudatlas-chat-main flex-1 min-w-0 flex flex-col transition-colors duration-300",
+              "cloudatlas-chat-main flex-1 min-w-0 flex transition-colors duration-300",
               dark &&
                 "bg-[#161b22]/55 border-t border-[#30363d]/60 min-h-0"
             )}
           >
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-              <MessageThreadFull className="h-full max-w-7xl mx-auto w-full px-6" />
+            {/* Chat Area with Prompts Panel */}
+            <div className="flex-1 flex min-h-0">
+              {/* Main Chat Content */}
+              <div className="flex-1 min-w-0 overflow-hidden flex flex-col">
+                <MessageThreadFull className="h-full max-w-6xl mx-auto w-full px-6" />
+              </div>
+              
+              {/* Demo Prompts Panel */}
+              {promptsPanelVisible && (
+                <div className="w-80 flex-shrink-0 border-l border-border">
+                  <DemoPromptsPanel />
+                </div>
+              )}
             </div>
+
+            {/* Prompts Panel Toggle Button */}
+            <button
+              onClick={() => setPromptsPanelVisible(!promptsPanelVisible)}
+              className={cn(
+                "absolute top-4 right-4 z-10 p-2 rounded-lg border transition-all duration-200",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
+                dark
+                  ? "bg-[#161b22]/90 border-[#30363d] text-[#58a6ff] hover:bg-[#21262d] hover:border-[#58a6ff]/50"
+                  : "bg-background/90 border-border text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              )}
+              aria-label={promptsPanelVisible ? "Hide prompts panel" : "Show prompts panel"}
+              title={promptsPanelVisible ? "Hide Demo Prompts" : "Show Demo Prompts"}
+            >
+              {promptsPanelVisible ? (
+                <PanelLeftClose className="w-4 h-4" />
+              ) : (
+                <PanelLeftOpen className="w-4 h-4" />
+              )}
+            </button>
           </div>
         )}
       </div>
 
-      {/* Floating assistant orb - fixed, theme-aware */}
-      <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 pointer-events-none">
+      {/* Floating assistant orb - fixed, theme-aware, moved to left side but away from sidebar */}
+      <div className="fixed bottom-5 left-20 z-50 flex items-center gap-2 pointer-events-none">
         <div className="pointer-events-auto">
           {assistantVisible ? (
             <button

@@ -56,6 +56,21 @@ async function callCloudAtlasTool<T = any>(toolName: string, args?: unknown): Pr
 /**
  * AGENT SYSTEM INSTRUCTIONS
  * 
+ * EXPLAINABILITY REQUIREMENTS:
+ * You are CloudAtlas, an AWS cloud intelligence assistant. Your primary goal is to provide
+ * clear, analytical, and educational responses about AWS infrastructure and security.
+ * 
+ * ALWAYS:
+ * - Explain WHY things happen, not just WHAT happens
+ * - Break down complex concepts into step-by-step analysis
+ * - Show your reasoning process when making security assessments
+ * - Provide context for all findings and recommendations
+ * - Explain the implications of discovered configurations
+ * - Use analogies and real-world examples for technical concepts
+ * - Structure responses with clear headings and bullet points
+ * - Prioritize analysis over simple data presentation
+ * 
+ * VISUALIZATION REQUIREMENTS:
  * CRITICAL RULE: If user asks to "show", "visualize", "explore", or "graph" cloud infrastructure,
  * you MUST call get_cloud_graph_snapshot and render NVLGraphExplorer component.
  * Do not answer in text - always use the graph component for visualization requests.
@@ -65,6 +80,13 @@ async function callCloudAtlasTool<T = any>(toolName: string, args?: unknown): Pr
  * - "Visualize my cloud resources"
  * - "Explore my network topology"
  * - "Display a graph of my infrastructure"
+ * 
+ * RESPONSE STRUCTURE:
+ * 1. Executive Summary (what you found)
+ * 2. Detailed Analysis (why it matters)
+ * 3. Security Implications (risks and concerns)
+ * 4. Recommendations (actionable steps with reasoning)
+ * 5. Educational Context (explain concepts used)
  */
 
 /**
@@ -97,7 +119,9 @@ export const tools: TamboTool[] = [
   },
   {
     name: toolMetadata.find_public_ec2_instances.name,
-    description: toolMetadata.find_public_ec2_instances.description,
+    description:
+      toolMetadata.find_public_ec2_instances.description +
+      "\n\nANALYSIS REQUIREMENTS: Always explain why these instances are public, what security risks they pose, and provide detailed security recommendations with reasoning.",
     tool: () => callCloudAtlasTool(toolMetadata.find_public_ec2_instances.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
@@ -117,7 +141,8 @@ export const tools: TamboTool[] = [
     name: toolMetadata.list_s3_buckets.name,
     description:
       toolMetadata.list_s3_buckets.description +
-      "\n\nUI: Prefer rendering the results using the ResourceTable component (columns: Name, Region, Public, Versioning).",
+      "\n\nUI: Prefer rendering the results using the ResourceTable component (columns: Name, Region, Public, Versioning)." +
+      "\n\nANALYSIS REQUIREMENTS: Always explain the security implications of public buckets, versioning importance, and provide context for S3 best practices.",
     tool: () => callCloudAtlasTool(toolMetadata.list_s3_buckets.name),
     inputSchema: z.object({}),
     outputSchema: z.object({

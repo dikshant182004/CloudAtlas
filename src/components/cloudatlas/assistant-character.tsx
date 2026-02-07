@@ -30,8 +30,14 @@ export interface AssistantCharacterProps
 
 const sizeClasses = {
   sm: "w-12 h-12",
+  md: "w-16 h-16",
+  lg: "w-20 h-20",
+};
+
+const svgSizeClasses = {
+  sm: "w-10 h-10",
   md: "w-14 h-14",
-  lg: "w-16 h-16",
+  lg: "w-18 h-18",
 };
 
 /**
@@ -93,20 +99,35 @@ export const AssistantCharacter = React.forwardRef<
         aria-hidden
       >
         {/* AWS-inspired curved arrow forming subtle smile */}
-        <g stroke="#FF9900" strokeWidth="2" fill="none" opacity="0.9">
-          {/* Main arrow curve - forms the "smile" */}
+        <g stroke="#FF9900" strokeWidth="2.5" fill="none" opacity="0.95">
+          {/* Main arrow curve - forms the "smile" - more pronounced */}
           <path
-            d="M 8 25 Q 20 32 32 25"
+            d="M 6 24 Q 20 33 34 24"
             strokeLinecap="round"
             className={state === "thinking" ? "assistant-arrow-curve" : ""}
           />
-          {/* Arrow head */}
+          {/* Arrow head - more defined */}
           <path
-            d="M 32 25 L 29 22 M 32 25 L 30 28"
+            d="M 34 24 L 30 20 M 34 24 L 31 27"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         </g>
+        
+        {/* AWS text indicator - subtle but readable */}
+        <text
+          x="20"
+          y="20"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="6"
+          fontWeight="700"
+          fill="#FF9900"
+          opacity="0.85"
+          className={state === "thinking" ? "assistant-core-glow" : ""}
+        >
+          AWS
+        </text>
         
         {/* Intelligence indicators - soft dots */}
         <g fill="#FF9900" opacity="0.6">
