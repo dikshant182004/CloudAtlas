@@ -16,6 +16,8 @@ import { Check, ChevronDown, ExternalLink, Loader2, X } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
 import { Streamdown } from "streamdown";
+import { NVLGraphExplorer } from "@/components/interactable/graph";
+import { RiskCard } from "@/components/cloudatlas";
 
 /**
  * Converts message content to markdown format for rendering with streamdown.
@@ -480,7 +482,7 @@ const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
             aria-controls={toolDetailsId}
             onClick={() => setIsExpanded(!isExpanded)}
             className={cn(
-              "flex items-center gap-1 cursor-pointer hover:bg-muted rounded-md p-1 select-none w-fit",
+              "flex items-center gap-1 cursor-pointer hover:bg-muted-foreground/10 rounded-md p-1 select-none w-fit",
             )}
           >
             <ToolcallStatusIcon
@@ -979,6 +981,101 @@ function formatTextContent(
 export type MessageRenderedComponentAreaProps =
   React.HTMLAttributes<HTMLDivElement>;
 
+function getToolResponseText(message: TamboThreadMessage | null): string | null {
+  if (!message?.content) return null;
+  if (typeof message.content === "string") return message.content;
+  if (!Array.isArray(message.content)) return null;
+
+  const parts: string[] = [];
+  for (const item of message.content) {
+    if (item?.type === "text" && typeof item.text === "string") {
+      parts.push(item.text);
+    }
+  }
+  return parts.length ? parts.join("") : null;
+}
+
+function inferRenderedComponentFromTool(
+  toolName: string | undefined,
+  toolResponse: TamboThreadMessage | null,
+): React.ReactNode | null {
+  if (toolName === "get_cloud_graph_snapshot_nvl") {
+    const raw = getToolResponseText(toolResponse);
+    if (!raw) return null;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return null;
+      return <NVLGraphExplorer {...(parsed as any)} className="w-full h-[520px] md:h-[600px] max-w-full" />;
+    } catch {
+      return null;
+    }
+  }
+
+  // Handle internet exposed resources - render RiskCards
+  if (toolName === "find_internet_exposed_resources") {
+    const raw = getToolResponseText(toolResponse);
+    if (!raw) return null;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object" || !parsed.data) return null;
+      
+      const { data, summary } = parsed as any;
+      if (!Array.isArray(data)) return null;
+
+      // Group by risk level and create RiskCards
+      const riskGroups = data.reduce((acc: any, item: any) => {
+        const level = item.riskLevel?.toLowerCase() || 'low';
+        if (!acc[level]) {
+          acc[level] = {
+            title: `${level.charAt(0).toUpperCase() + level.slice(1)} Risk Resources`,
+            severity: level,
+            description: summary,
+            count: 0,
+            resourceType: item.type,
+            resourceId: item.id,
+            resources: []
+          };
+        }
+        acc[level].count++;
+        acc[level].resources.push(item);
+        return acc;
+      }, {});
+
+      // Enhance description with resource details
+      Object.values(riskGroups).forEach((riskCard: any) => {
+        const resourceTypes = [...new Set(riskCard.resources.map((r: any) => r.type))];
+        const exposureTypes = [...new Set(riskCard.resources.map((r: any) => r.exposureType))];
+        const regions = [...new Set(riskCard.resources.map((r: any) => r.region).filter(Boolean))];
+        
+        let enhancedDescription = `${summary}\n\n**Details:**\n`;
+        enhancedDescription += `• Resource Types: ${resourceTypes.join(', ')}\n`;
+        enhancedDescription += `• Exposure Types: ${exposureTypes.join(', ')}\n`;
+        if (regions.length > 0) {
+          enhancedDescription += `• Regions: ${regions.join(', ')}\n`;
+        }
+        enhancedDescription += `• Total Resources: ${riskCard.count}`;
+        
+        riskCard.description = enhancedDescription;
+        riskCard.resourceType = resourceTypes.join(', ');
+      });
+
+      return (
+        <div className="space-y-3">
+          {Object.values(riskGroups).map((riskCard: any, index: number) => (
+            <RiskCard key={index} {...riskCard} />
+          ))}
+        </div>
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
 /**
  * Displays the `renderedComponent` associated with an assistant message.
  * Shows a button to view in canvas if a canvas space exists, otherwise renders inline.
@@ -991,6 +1088,7 @@ const MessageRenderedComponentArea = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const { message, role } = useMessageContext();
   const [canvasExists, setCanvasExists] = React.useState(false);
+  const { thread } = useTambo();
 
   // Check if canvas exists on mount and window resize
   React.useEffect(() => {
@@ -1011,11 +1109,37 @@ const MessageRenderedComponentArea = React.forwardRef<
     };
   }, []);
 
-  if (
-    !message.renderedComponent ||
-    role !== "assistant" ||
-    message.isCancelled
-  ) {
+  if (role !== "assistant" || message.isCancelled) {
+    return null;
+  }
+
+  const inferredComponent = React.useMemo(() => {
+    if (message.renderedComponent) return null;
+    const toolCall = getToolCallRequest(message);
+    const toolName = toolCall?.toolName;
+    if (!toolName || !thread?.messages) return null;
+
+    const currentMessageIndex = thread.messages.findIndex(
+      (m: TamboThreadMessage) => m.id === message.id,
+    );
+    if (currentMessageIndex === -1) return null;
+
+    let toolResponse: TamboThreadMessage | null = null;
+    for (let i = currentMessageIndex + 1; i < thread.messages.length; i++) {
+      const nextMessage = thread.messages[i];
+      if (nextMessage.role === "tool") {
+        toolResponse = nextMessage;
+        break;
+      }
+      if (nextMessage.role === "assistant" && getToolCallRequest(nextMessage)) {
+        break;
+      }
+    }
+
+    return inferRenderedComponentFromTool(toolName, toolResponse);
+  }, [message, thread?.messages]);
+
+  if (!message.renderedComponent && !inferredComponent) {
     return null;
   }
 
@@ -1036,7 +1160,7 @@ const MessageRenderedComponentArea = React.forwardRef<
                     new CustomEvent("tambo:showComponent", {
                       detail: {
                         messageId: message.id,
-                        component: message.renderedComponent,
+                        component: message.renderedComponent ?? inferredComponent,
                       },
                     }),
                   );
@@ -1050,7 +1174,9 @@ const MessageRenderedComponentArea = React.forwardRef<
             </button>
           </div>
         ) : (
-          <div className="w-full pt-2 px-2">{message.renderedComponent}</div>
+          <div className="w-full pt-2 px-2">
+            {message.renderedComponent ?? inferredComponent}
+          </div>
         ))}
     </div>
   );

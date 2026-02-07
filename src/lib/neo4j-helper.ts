@@ -1,4 +1,4 @@
-import neo4j, { type Record, type Integer } from 'neo4j-driver';
+import neo4j, { type Driver, type Record, type Integer } from 'neo4j-driver';
 
 /**
  * Neo4j helper for CloudAtlas MCP tools
@@ -18,7 +18,7 @@ export interface CloudQueryResult<T = any> {
 }
 
 class Neo4jHelper {
-  private driver: neo4j.Driver | null = null;
+  private driver: Driver | null = null;
   private config: Neo4jConfig;
 
   constructor() {

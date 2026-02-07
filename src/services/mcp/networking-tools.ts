@@ -28,13 +28,13 @@ export async function find_internet_exposed_resources(): Promise<CloudQueryResul
       (rule.cidr_blocks IS NOT NULL AND rule.cidr_blocks CONTAINS '0.0.0.0/0') OR
       (rule.ipv4_ranges IS NOT NULL AND rule.ipv4_ranges CONTAINS '0.0.0.0/0')
     )
-    WITH ec2.id as id, 'EC2Instance' as type, region.name as region, 
-         CASE 
-           WHEN ec2.public_ip_address IS NOT NULL THEN 'Public IP'
-           WHEN rule.cidr_blocks CONTAINS '0.0.0.0/0' THEN 'Open Security Group'
-           ELSE 'Unknown Exposure'
-         END as exposureType,
-         'HIGH' as riskLevel
+    RETURN ec2.id as id, 'EC2Instance' as type, COALESCE(region.name, 'unknown') as region, 
+           CASE 
+             WHEN ec2.public_ip_address IS NOT NULL THEN 'Public IP'
+             WHEN rule.cidr_blocks CONTAINS '0.0.0.0/0' THEN 'Open Security Group'
+             ELSE 'Unknown Exposure'
+           END as exposureType,
+           'HIGH' as riskLevel
     
     UNION ALL
     
@@ -51,9 +51,9 @@ export async function find_internet_exposed_resources(): Promise<CloudQueryResul
         policy.policy_document CONTAINS '"Principal":"*"')) OR
       (bucket.public_access_blocked = false OR bucket.public_access_blocked IS NULL)
     )
-    WITH bucket.name as id, 'S3Bucket' as type, COALESCE(region.name, 'unknown') as region,
-         'Public Bucket Policy/ACL' as exposureType,
-         'CRITICAL' as riskLevel
+    RETURN bucket.name as id, 'S3Bucket' as type, COALESCE(region.name, 'unknown') as region,
+           'Public Bucket Policy/ACL' as exposureType,
+           'CRITICAL' as riskLevel
     
     UNION ALL
     
@@ -61,9 +61,9 @@ export async function find_internet_exposed_resources(): Promise<CloudQueryResul
     MATCH (lb:LoadBalancer)
     OPTIONAL MATCH (lb)-[:IN_REGION]->(region:Region)
     WHERE lb.scheme = 'internet-facing'
-    WITH lb.arn as id, 'LoadBalancer' as type, region.name as region,
-         'Internet-facing Load Balancer' as exposureType,
-         'HIGH' as riskLevel
+    RETURN lb.arn as id, 'LoadBalancer' as type, COALESCE(region.name, 'unknown') as region,
+           'Internet-facing Load Balancer' as exposureType,
+           'HIGH' as riskLevel
     
     UNION ALL
     
@@ -76,15 +76,14 @@ export async function find_internet_exposed_resources(): Promise<CloudQueryResul
       rds.publicly_accessible = true OR
       (rule.cidr_blocks IS NOT NULL AND rule.cidr_blocks CONTAINS '0.0.0.0/0')
     )
-    WITH rds.db_instance_arn as id, 'RDSInstance' as type, region.name as region,
-         CASE 
-           WHEN rds.publicly_accessible = true THEN 'Public RDS Instance'
-           WHEN rule.cidr_blocks CONTAINS '0.0.0.0/0' THEN 'Open Security Group'
-           ELSE 'Unknown Exposure'
-         END as exposureType,
-         'CRITICAL' as riskLevel
+    RETURN rds.db_instance_arn as id, 'RDSInstance' as type, COALESCE(region.name, 'unknown') as region,
+           CASE 
+             WHEN rds.publicly_accessible = true THEN 'Public RDS Instance'
+             WHEN rule.cidr_blocks CONTAINS '0.0.0.0/0' THEN 'Open Security Group'
+             ELSE 'Unknown Exposure'
+           END as exposureType,
+           'CRITICAL' as riskLevel
     
-    RETURN id, type, region, exposureType, riskLevel
     ORDER BY riskLevel DESC, type, id
   `;
 

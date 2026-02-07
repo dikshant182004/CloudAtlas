@@ -2,17 +2,11 @@ export { AssistantCharacter } from "./assistant-character";
 export { CloudAtlasChatShell } from "./cloudatlas-chat-shell";
 export { CloudAtlasLayout } from "./cloudatlas-layout";
 export {
-  CloudGraph,
-  cloudGraphSchema,
-  type CloudGraphProps,
-  type CloudGraphNode,
-  type CloudGraphEdge,
-} from "./cloud-graph";
-export {
   ResourceTable,
   resourceTableSchema,
   type ResourceTableProps,
 } from "./resource-table";
+export { ResourceCountBarChart } from "./resource-count-bar-chart";
 export {
   RiskCard,
   riskCardSchema,

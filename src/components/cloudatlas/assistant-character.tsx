@@ -35,9 +35,9 @@ const sizeClasses = {
 };
 
 /**
- * Floating orb: semi-transparent, soft glow, thin lines/nodes orbiting inside.
- * Cyan/teal/purple accents. Idle = float + breathing glow; Thinking = inner lines rotate;
- * Tool = pulse; Response = gentle sparkle/expansion.
+ * AWS-inspired cloud intelligence assistant character.
+ * Features a curved arrow forming a subtle smile, representing cloud guidance and expertise.
+ * Clean, professional design with AWS orange accent and intelligent energy indicators.
  */
 export const AssistantCharacter = React.forwardRef<
   HTMLDivElement,
@@ -60,72 +60,75 @@ export const AssistantCharacter = React.forwardRef<
 
   const animationClass =
     state === "idle"
-      ? "orb-idle"
+      ? "assistant-idle"
       : state === "thinking"
-        ? "orb-thinking"
+        ? "assistant-thinking"
         : state === "tool"
-          ? "orb-tool"
+          ? "assistant-tool"
           : playedComplete
-            ? "orb-complete"
-            : "orb-idle";
+            ? "assistant-complete"
+            : "assistant-idle";
 
   return (
     <div
       ref={ref}
       className={cn(
         "flex items-center justify-center shrink-0 rounded-full",
-        "bg-[var(--orb-fill)] border border-[var(--orb-line)]",
+        "bg-gradient-to-br from-slate-900 to-slate-800 border border-orange-500/30",
         "backdrop-blur-sm transition-all duration-300",
         sizeClasses[size],
         animationClass,
         className
       )}
       style={{
-        boxShadow: "0 0 20px var(--orb-glow), inset 0 0 20px var(--orb-fill)",
+        boxShadow: "0 0 30px rgba(255, 153, 0, 0.15), inset 0 0 20px rgba(15, 23, 42, 0.5)",
       }}
       aria-label={`Assistant ${state}`}
       {...props}
     >
       <svg
         viewBox="0 0 40 40"
-        className={cn("w-[70%] h-[70%] overflow-visible", state === "thinking" && "orb-inner")}
+        className={cn("w-[80%] h-[80%] overflow-visible", state === "thinking" && "assistant-inner")}
         fill="none"
         aria-hidden
       >
-        {/* Outer ring - thin */}
+        {/* AWS-inspired curved arrow forming subtle smile */}
+        <g stroke="#FF9900" strokeWidth="2" fill="none" opacity="0.9">
+          {/* Main arrow curve - forms the "smile" */}
+          <path
+            d="M 8 25 Q 20 32 32 25"
+            strokeLinecap="round"
+            className={state === "thinking" ? "assistant-arrow-curve" : ""}
+          />
+          {/* Arrow head */}
+          <path
+            d="M 32 25 L 29 22 M 32 25 L 30 28"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
+        
+        {/* Intelligence indicators - soft dots */}
+        <g fill="#FF9900" opacity="0.6">
+          <circle cx="12" cy="18" r="1.5" className={state === "thinking" ? "assistant-pulse-1" : ""} />
+          <circle cx="28" cy="18" r="1.5" className={state === "thinking" ? "assistant-pulse-2" : ""} />
+          <circle cx="20" cy="12" r="1" className={state === "thinking" ? "assistant-pulse-3" : ""} />
+        </g>
+        
+        {/* Energy lines - subtle connections */}
+        <g stroke="#FF9900" strokeWidth="0.5" opacity="0.4">
+          <line x1="12" y1="18" x2="20" y2="12" className={state === "thinking" ? "assistant-energy-line" : ""} />
+          <line x1="28" y1="18" x2="20" y2="12" className={state === "thinking" ? "assistant-energy-line-2" : ""} />
+        </g>
+        
+        {/* Core indicator - represents cloud intelligence */}
         <circle
           cx="20"
           cy="20"
-          r="16"
-          stroke="var(--orb-line)"
-          strokeWidth="0.8"
+          r="3"
+          fill="#FF9900"
           opacity="0.8"
-        />
-        {/* Orbiting nodes / inner structure */}
-        <g stroke="var(--orb-line)" strokeWidth="0.6" opacity="0.9">
-          <circle cx="20" cy="8" r="1.2" fill="var(--orb-teal, var(--orb-line))" />
-          <circle cx="28" cy="14" r="1" fill="var(--orb-purple, var(--orb-line))" />
-          <circle cx="28" cy="26" r="1" fill="var(--orb-line)" />
-          <circle cx="20" cy="32" r="1.2" fill="var(--orb-teal, var(--orb-line))" />
-          <circle cx="12" cy="26" r="1" fill="var(--orb-line)" />
-          <circle cx="12" cy="14" r="1" fill="var(--orb-purple, var(--orb-line))" />
-        </g>
-        {/* Thin connecting lines (orbit / topology feel) */}
-        <g stroke="var(--orb-line)" strokeWidth="0.4" opacity="0.5">
-          <line x1="20" y1="8" x2="28" y2="14" />
-          <line x1="28" y1="14" x2="28" y2="26" />
-          <line x1="28" y1="26" x2="20" y2="32" />
-          <line x1="20" y1="32" x2="12" y2="26" />
-          <line x1="12" y1="26" x2="12" y2="14" />
-          <line x1="12" y1="14" x2="20" y2="8" />
-        </g>
-        {/* Center dot - soft */}
-        <circle
-          cx="20"
-          cy="20"
-          r="2.5"
-          fill="var(--orb-line)"
-          opacity="0.6"
+          className={state === "complete" ? "assistant-core-glow" : ""}
         />
       </svg>
     </div>

@@ -1,8 +1,18 @@
 import { neo4jHelper, type CloudQueryResult } from '@/lib/neo4j-helper';
+import { GraphData } from '@/components/interactable/graph/graphStyles';
 
 /**
  * Graph Visualization MCP Tool for CloudAtlas
- * Provides graph slices suitable for visualization
+ * REQUIRED tool for visualizing cloud infrastructure.
+ * 
+ * This tool MUST be used whenever user asks to:
+ * - show infrastructure
+ * - visualize cloud resources  
+ * - explore relationships
+ * - display a graph
+ *
+ * The result MUST be rendered using NVLGraphExplorer interactable component.
+ * Never summarize this data in text.
  */
 
 export interface GraphNode {
@@ -32,11 +42,15 @@ export interface CloudGraphSnapshot {
 export async function get_cloud_graph_snapshot(
   resourceType?: string,
   limit: number = 100
-): Promise<CloudQueryResult<CloudGraphSnapshot>> {
+): Promise<CloudGraphSnapshot> {
   // Build the Cypher query based on resource type filter
   let whereClause = '';
-  if (resourceType) {
-    whereClause = `WHERE node:${resourceType}`;
+  if (resourceType && typeof resourceType === 'string') {
+    // Sanitize the resourceType to prevent injection
+    const sanitizedType = resourceType.replace(/[^a-zA-Z0-9_]/g, '');
+    if (sanitizedType) {
+      whereClause = `WHERE node:${sanitizedType}`;
+    }
   }
 
   const cypher = `
@@ -48,15 +62,50 @@ export async function get_cloud_graph_snapshot(
     
     // Get relationships for these nodes
     OPTIONAL MATCH (node)-[rel]->(targetNode)
-    WHERE targetNode IN [n IN collect(node) | n]
     
-    // Collect all unique nodes
-    WITH collect(DISTINCT node) + collect(DISTINCT targetNode) as allNodes
+    // Collect nodes and edges separately to maintain scope
+    WITH 
+      collect(DISTINCT node) + collect(DISTINCT targetNode) as allNodes,
+      collect(DISTINCT CASE 
+        WHEN rel IS NULL THEN NULL
+        ELSE {
+          source: COALESCE(
+            startNode(rel).id,
+            startNode(rel).name,
+            startNode(rel).arn,
+            startNode(rel).db_instance_arn,
+            startNode(rel).vpc_id,
+            startNode(rel).subnet_id,
+            startNode(rel).security_group_id,
+            startNode(rel).internet_gateway_id,
+            startNode(rel).nat_gateway_id,
+            startNode(rel).route_table_id,
+            toString(id(startNode(rel)))
+          ),
+          target: COALESCE(
+            endNode(rel).id,
+            endNode(rel).name,
+            endNode(rel).arn,
+            endNode(rel).db_instance_arn,
+            endNode(rel).vpc_id,
+            endNode(rel).subnet_id,
+            endNode(rel).security_group_id,
+            endNode(rel).internet_gateway_id,
+            endNode(rel).nat_gateway_id,
+            endNode(rel).route_table_id,
+            toString(id(endNode(rel)))
+          ),
+          type: type(rel),
+          meta: properties(rel)
+        }
+      END
+      ) as edges
     
+    // Process nodes
     UNWIND allNodes as uniqueNode
-    WITH uniqueNode, labels(uniqueNode) as uniqueLabels
+    WITH uniqueNode, labels(uniqueNode) as uniqueLabels, edges
     
-    // Return nodes and edges
+    // Return final structure
     RETURN 
       COLLECT(DISTINCT {
         id: COALESCE(
@@ -88,37 +137,7 @@ export async function get_cloud_graph_snapshot(
         ),
         meta: properties(uniqueNode)
       }) as nodes,
-      
-      COLLECT(DISTINCT {
-        source: COALESCE(
-          startNode(rel).id,
-          startNode(rel).name,
-          startNode(rel).arn,
-          startNode(rel).db_instance_arn,
-          startNode(rel).vpc_id,
-          startNode(rel).subnet_id,
-          startNode(rel).security_group_id,
-          startNode(rel).internet_gateway_id,
-          startNode(rel).nat_gateway_id,
-          startNode(rel).route_table_id,
-          toString(id(startNode(rel)))
-        ),
-        target: COALESCE(
-          endNode(rel).id,
-          endNode(rel).name,
-          endNode(rel).arn,
-          endNode(rel).db_instance_arn,
-          endNode(rel).vpc_id,
-          endNode(rel).subnet_id,
-          endNode(rel).security_group_id,
-          endNode(rel).internet_gateway_id,
-          endNode(rel).nat_gateway_id,
-          endNode(rel).route_table_id,
-          toString(id(endNode(rel)))
-        ),
-        type: type(rel),
-        meta: properties(rel)
-      }) as edges
+      edges
   `;
 
   const result = await neo4jHelper.executeQuery<{
@@ -126,28 +145,17 @@ export async function get_cloud_graph_snapshot(
     edges: GraphEdge[];
   }>(cypher, 'Cloud infrastructure relationship graph');
 
-  // Transform the result to match the expected format
-  if (result.data.length > 0) {
-    const graphData = result.data[0];
-    const snapshot: CloudGraphSnapshot = {
-      summary: result.summary,
-      nodes: graphData.nodes || [],
-      edges: graphData.edges || [],
-    };
-
-    return {
-      summary: result.summary,
-      data: [snapshot],
-    };
-  }
+  // Transform into a single, canonical graph snapshot.
+  const first = result.data[0];
+  const graphSnapshot: GraphData = {
+    nodes: first?.nodes || [],
+    edges: (first?.edges || []).filter((edge) => edge !== null),
+  };
 
   return {
     summary: result.summary,
-    data: [{
-      summary: result.summary,
-      nodes: [],
-      edges: [],
-    }],
+    nodes: graphSnapshot.nodes,
+    edges: graphSnapshot.edges,
   };
 }
 

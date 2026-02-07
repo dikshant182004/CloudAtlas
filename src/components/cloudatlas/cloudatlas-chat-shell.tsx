@@ -116,7 +116,7 @@ export function CloudAtlasChatShell({
             )}
           >
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-              <MessageThreadFull className="h-full max-w-4xl mx-auto w-full" />
+              <MessageThreadFull className="h-full max-w-7xl mx-auto w-full px-6" />
             </div>
           </div>
         )}

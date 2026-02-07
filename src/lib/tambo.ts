@@ -9,8 +9,6 @@
  */
 
 import {
-  CloudGraph,
-  cloudGraphSchema,
   ResourceTable,
   resourceTableSchema,
   RiskCard,
@@ -22,17 +20,52 @@ import {
   getCountryPopulations,
   getGlobalPopulationTrend,
 } from "@/services/population-stats";
-import { 
-  cloudAtlasMCPTools, 
+import {
   initializeMCPTools,
   toolMetadata 
 } from "@/services/mcp";
+import { NVLGraphExplorer } from "@/components/interactable/graph";
 import type { TamboComponent } from "@tambo-ai/react";
 import { TamboTool } from "@tambo-ai/react";
 import { z } from "zod";
 
-// Initialize MCP tools on module load
-initializeMCPTools().catch(console.error);
+// Initialize MCP tools on module load (server-only)
+if (typeof window === "undefined") {
+  initializeMCPTools().catch(console.error);
+}
+
+async function callCloudAtlasTool<T = any>(toolName: string, args?: unknown): Promise<T> {
+  const res = await fetch("/api/cloudatlas/tools", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ toolName, args }),
+  });
+  if (!res.ok) {
+    let msg = `Tool call failed (${res.status})`;
+    try {
+      const data = await res.json();
+      if (data?.error) msg = String(data.error);
+    } catch {
+      // ignore
+    }
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+/**
+ * AGENT SYSTEM INSTRUCTIONS
+ * 
+ * CRITICAL RULE: If user asks to "show", "visualize", "explore", or "graph" cloud infrastructure,
+ * you MUST call get_cloud_graph_snapshot and render NVLGraphExplorer component.
+ * Do not answer in text - always use the graph component for visualization requests.
+ * 
+ * Examples that require graph:
+ * - "Show my AWS infrastructure"
+ * - "Visualize my cloud resources"
+ * - "Explore my network topology"
+ * - "Display a graph of my infrastructure"
+ */
 
 /**
  * tools
@@ -47,7 +80,7 @@ export const tools: TamboTool[] = [
   {
     name: toolMetadata.list_ec2_instances.name,
     description: toolMetadata.list_ec2_instances.description,
-    tool: cloudAtlasMCPTools.list_ec2_instances,
+    tool: () => callCloudAtlasTool(toolMetadata.list_ec2_instances.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
       summary: z.string(),
@@ -65,7 +98,7 @@ export const tools: TamboTool[] = [
   {
     name: toolMetadata.find_public_ec2_instances.name,
     description: toolMetadata.find_public_ec2_instances.description,
-    tool: cloudAtlasMCPTools.find_public_ec2_instances,
+    tool: () => callCloudAtlasTool(toolMetadata.find_public_ec2_instances.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
       summary: z.string(),
@@ -82,8 +115,10 @@ export const tools: TamboTool[] = [
   },
   {
     name: toolMetadata.list_s3_buckets.name,
-    description: toolMetadata.list_s3_buckets.description,
-    tool: cloudAtlasMCPTools.list_s3_buckets,
+    description:
+      toolMetadata.list_s3_buckets.description +
+      "\n\nUI: Prefer rendering the results using the ResourceTable component (columns: Name, Region, Public, Versioning).",
+    tool: () => callCloudAtlasTool(toolMetadata.list_s3_buckets.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
       summary: z.string(),
@@ -98,9 +133,47 @@ export const tools: TamboTool[] = [
     }),
   },
   {
+    name: "list_s3_buckets_table",
+    description:
+      "List all S3 buckets and return ResourceTable props for direct visualization. Use this when the user asks to show/list S3 buckets in a table.",
+    tool: async () => {
+      const res = await callCloudAtlasTool<any>(toolMetadata.list_s3_buckets.name);
+      const buckets = (res.data ?? []) as any[];
+      return {
+        title: "S3 Buckets",
+        columns: [
+          { key: "name", label: "Name" },
+          { key: "region", label: "Region" },
+          { key: "isPublic", label: "Public" },
+          { key: "versioningStatus", label: "Versioning" },
+        ],
+        rows: buckets.map((b: any) => [
+          b.name,
+          b.region,
+          b.isPublic ? "Yes" : "No",
+          b.versioningStatus ?? "—",
+        ]),
+        resourceSummary: [
+          {
+            resourceType: "S3",
+            count: buckets.length,
+            resources: buckets.map((b: any) => ({
+              id: String(b.name ?? "unknown"),
+              name: String(b.name ?? "unknown"),
+              region: typeof b.region === "string" ? b.region : undefined,
+              riskLevel: undefined,
+            })),
+          },
+        ],
+      };
+    },
+    inputSchema: z.object({}),
+    outputSchema: resourceTableSchema,
+  },
+  {
     name: toolMetadata.find_public_s3_buckets.name,
     description: toolMetadata.find_public_s3_buckets.description,
-    tool: cloudAtlasMCPTools.find_public_s3_buckets,
+    tool: () => callCloudAtlasTool(toolMetadata.find_public_s3_buckets.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
       summary: z.string(),
@@ -117,7 +190,7 @@ export const tools: TamboTool[] = [
   {
     name: toolMetadata.list_iam_roles.name,
     description: toolMetadata.list_iam_roles.description,
-    tool: cloudAtlasMCPTools.list_iam_roles,
+    tool: () => callCloudAtlasTool(toolMetadata.list_iam_roles.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
       summary: z.string(),
@@ -135,7 +208,7 @@ export const tools: TamboTool[] = [
   {
     name: toolMetadata.find_overprivileged_iam_roles.name,
     description: toolMetadata.find_overprivileged_iam_roles.description,
-    tool: cloudAtlasMCPTools.find_overprivileged_iam_roles,
+    tool: () => callCloudAtlasTool(toolMetadata.find_overprivileged_iam_roles.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
       summary: z.string(),
@@ -153,7 +226,7 @@ export const tools: TamboTool[] = [
   {
     name: toolMetadata.find_internet_exposed_resources.name,
     description: toolMetadata.find_internet_exposed_resources.description,
-    tool: cloudAtlasMCPTools.find_internet_exposed_resources,
+    tool: () => callCloudAtlasTool(toolMetadata.find_internet_exposed_resources.name),
     inputSchema: z.object({}),
     outputSchema: z.object({
       summary: z.string(),
@@ -169,29 +242,80 @@ export const tools: TamboTool[] = [
   },
   {
     name: toolMetadata.get_cloud_graph_snapshot.name,
-    description: toolMetadata.get_cloud_graph_snapshot.description,
-    tool: cloudAtlasMCPTools.get_cloud_graph_snapshot,
+    description:
+      toolMetadata.get_cloud_graph_snapshot.description +
+      "\n\nNOTE: This returns raw graph data only. For visualization requests (show/visualize/explore/graph infrastructure), prefer calling get_cloud_graph_snapshot_nvl and render the NVLGraphExplorer component.",
+    tool: (args: any) =>
+      callCloudAtlasTool(toolMetadata.get_cloud_graph_snapshot.name, [
+        args?.resourceType,
+        args?.limit,
+      ]),
     inputSchema: z.object({
       resourceType: z.string().optional(),
       limit: z.number().optional(),
     }),
     outputSchema: z.object({
       summary: z.string(),
-      data: z.array(z.object({
-        summary: z.string(),
-        nodes: z.array(z.object({
+      nodes: z.array(
+        z.object({
           id: z.string(),
           type: z.string(),
           label: z.string(),
           meta: z.record(z.any()),
-        })),
-        edges: z.array(z.object({
+        }),
+      ),
+      edges: z.array(
+        z.object({
           source: z.string(),
           target: z.string(),
           type: z.string(),
           meta: z.record(z.any()).optional(),
-        })),
-      })),
+        }),
+      ),
+    }),
+  },
+  {
+    name: "get_cloud_graph_snapshot_nvl",
+    description:
+      "Fetch the cloud infrastructure relationship graph and return props for NVLGraphExplorer. Use this when the user asks to show/visualize/explore their infrastructure as a graph. After calling this tool, render the NVLGraphExplorer component using the returned object as props.",
+    tool: async (args: any) => {
+      const graph = await callCloudAtlasTool<any>(
+        toolMetadata.get_cloud_graph_snapshot.name,
+        [args?.resourceType, args?.limit],
+      );
+
+      return {
+        data: {
+          summary: graph.summary,
+          nodes: graph.nodes,
+          edges: graph.edges,
+        },
+      };
+    },
+    inputSchema: z.object({
+      resourceType: z.string().optional(),
+      limit: z.number().optional(),
+    }),
+    outputSchema: z.object({
+      data: z.object({
+        summary: z.string().optional(),
+        nodes: z.array(
+          z.object({
+            id: z.string(),
+            type: z.string(),
+            label: z.string(),
+            meta: z.record(z.any()).optional(),
+          }),
+        ),
+        edges: z.array(
+          z.object({
+            source: z.string(),
+            target: z.string(),
+            type: z.string(),
+            meta: z.record(z.any()).optional(),
+          }),
+        ),
+      }),
     }),
   },
   // Legacy population tools
@@ -252,6 +376,52 @@ export const tools: TamboTool[] = [
  */
 export const components: TamboComponent[] = [
   {
+    name: "NVLGraphExplorer",
+    description: "Interactive Neo4j Browser-like graph visualization for cloud infrastructure. Renders nodes and relationships with force-directed layout, node selection, hover effects, and detailed overview panel. Supports zoom, pan, and Neo4j-style dark theme. Use for exploring cloud infrastructure relationships, network topology, and resource dependencies. This is the primary graph visualization component.",
+    component: NVLGraphExplorer,
+    propsSchema: {
+      type: "object",
+      required: ["data"],
+      properties: {
+        data: {
+          type: "object",
+          required: ["nodes", "edges"],
+          properties: {
+            summary: { type: "string" },
+            nodes: {
+              type: "array",
+              minItems: 1,
+              items: {
+                type: "object",
+                required: ["id", "type", "label"],
+                properties: {
+                  id: { type: "string" },
+                  label: { type: "string" },
+                  type: { type: "string" },
+                  meta: { type: "object" },
+                },
+              },
+            },
+            edges: {
+              type: "array",
+              items: {
+                type: "object",
+                required: ["source", "target", "type"],
+                properties: {
+                  source: { type: "string" },
+                  target: { type: "string" },
+                  type: { type: "string" },
+                  meta: { type: "object" },
+                },
+              },
+            },
+          },
+        },
+        className: { type: "string" },
+      },
+    },
+  },
+  {
     name: "Graph",
     description:
       "A component that renders various types of charts (bar, line, pie) using Recharts. Supports customizable data visualization with labels, datasets, and styling options.",
@@ -261,16 +431,9 @@ export const components: TamboComponent[] = [
   {
     name: "DataCard",
     description:
-      "A component that displays options as clickable cards with links and summaries with the ability to select multiple items.",
+      "A component that displays options as clickable cards with links and summaries with ability to select multiple items.",
     component: DataCard,
     propsSchema: dataCardSchema,
-  },
-  {
-    name: "CloudGraph",
-    description:
-      "Neo4j-style graph visualization for cloud infrastructure. Renders nodes and edges. Pass nodes (id, label, type?, group?) and edges (id, source, target, label?). Use for resource relationships, dependency graphs, or topology.",
-    component: CloudGraph,
-    propsSchema: cloudGraphSchema,
   },
   {
     name: "ResourceTable",

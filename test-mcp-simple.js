@@ -1,5 +1,5 @@
-const { neo4jHelper } = require('./lib/neo4j-helper');
-const { cloudAtlasMCPTools } = require('./services/mcp');
+const { neo4jHelper } = require('./src/lib/neo4j-helper');
+const { cloudAtlasMCPTools } = require('./src/services/mcp');
 
 /**
  * Simple test script for MCP tools without TypeScript compilation
