@@ -277,13 +277,38 @@ export const NVLGraphExplorer: React.FC<NVLGraphExplorerProps> = ({ data, classN
   }, [nodes, edges, focusContext, connectedIds]);
 
   const isGraphReady = useMemo(() => {
-    const anyData: any = data as any;
-    const hasCanonical =
-      anyData &&
-      Array.isArray(anyData.nodes) &&
-      Array.isArray(anyData.edges);
-    return hasCanonical;
-  }, [data]);
+    const hasArrays = Array.isArray(nodes) && Array.isArray(edges);
+    const hasAnyInput = data != null;
+    return hasAnyInput && hasArrays;
+  }, [data, nodes, edges]);
+
+  // Re-fit graph when container size changes (chat streaming can change layout height)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const visualization = visualizationRef.current;
+    if (!visualization) return;
+
+    const maybeFitView = (visualization as any).fitView;
+    const maybeResize = (visualization as any).resize;
+
+    const ro = new ResizeObserver(() => {
+      try {
+        if (typeof maybeResize === "function") {
+          maybeResize.call(visualization);
+        }
+        if (typeof maybeFitView === "function") {
+          maybeFitView.call(visualization);
+        }
+      } catch {
+        // ignore
+      }
+    });
+
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [isGraphReady, focusedGraph.nodes.length, focusedGraph.edges.length, selectedNode?.id, selectedEdge?.type, focusContext]);
 
   // If selected node disappears after refresh, clear selection
   useEffect(() => {
@@ -534,6 +559,7 @@ export const NVLGraphExplorer: React.FC<NVLGraphExplorerProps> = ({ data, classN
           ref={containerRef}
           className="w-full h-full cursor-grab active:cursor-grabbing"
           style={{ background: "#030712", touchAction: "none", userSelect: "none" }}
+          tabIndex={0}
         />
 
         {!isGraphReady && (
@@ -549,74 +575,6 @@ export const NVLGraphExplorer: React.FC<NVLGraphExplorerProps> = ({ data, classN
         >
           Reset View
         </button>
-
-        {/* Zoom Controls */}
-        <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-1">
-          <button
-            onClick={() => {
-              // Try direct zoom method or fallback to keyboard simulation
-              const visualization = visualizationRef.current;
-              if (visualization) {
-                // Try NVL's internal zoom methods first
-                if (typeof (visualization as any).zoomIn === 'function') {
-                  (visualization as any).zoomIn();
-                } else if (typeof (visualization as any).zoom === 'function') {
-                  (visualization as any).zoom(1.2); // Zoom in by 20%
-                } else {
-                  // Fallback: trigger keyboard zoom event
-                  const container = containerRef.current;
-                  if (container) {
-                    container.focus();
-                    const event = new KeyboardEvent('keydown', {
-                      key: '+',
-                      code: 'Equal',
-                      keyCode: 187,
-                      bubbles: true,
-                      cancelable: true
-                    });
-                    container.dispatchEvent(event);
-                  }
-                }
-              }
-            }}
-            className="w-8 h-8 bg-gray-800 text-white rounded-t-md hover:bg-gray-700 transition-colors border border-gray-600 border-b-0 flex items-center justify-center text-sm font-medium"
-            title="Zoom In"
-          >
-            +
-          </button>
-          <button
-            onClick={() => {
-              // Try direct zoom method or fallback to keyboard simulation
-              const visualization = visualizationRef.current;
-              if (visualization) {
-                // Try NVL's internal zoom methods first
-                if (typeof (visualization as any).zoomOut === 'function') {
-                  (visualization as any).zoomOut();
-                } else if (typeof (visualization as any).zoom === 'function') {
-                  (visualization as any).zoom(0.8); // Zoom out by 20%
-                } else {
-                  // Fallback: trigger keyboard zoom event
-                  const container = containerRef.current;
-                  if (container) {
-                    container.focus();
-                    const event = new KeyboardEvent('keydown', {
-                      key: '-',
-                      code: 'Minus',
-                      keyCode: 189,
-                      bubbles: true,
-                      cancelable: true
-                    });
-                    container.dispatchEvent(event);
-                  }
-                }
-              }
-            }}
-            className="w-8 h-8 bg-gray-800 text-white rounded-b-md hover:bg-gray-700 transition-colors border border-gray-600 border-t-0 flex items-center justify-center text-sm font-medium"
-            title="Zoom Out"
-          >
-            −
-          </button>
-        </div>
 
         {focusContext && (
           <div className="absolute bottom-4 left-4 z-20 bg-gray-900/95 border border-gray-700 rounded-md px-3 py-2 max-w-xs max-h-40 overflow-y-auto shadow-xl">

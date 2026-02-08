@@ -132,6 +132,35 @@ export function getToolCallRequest(
   return message.toolCallRequest ?? message.component?.toolCallRequest;
 }
 
+function getAssociatedToolResponse(
+  messages: TamboThreadMessage[] | undefined,
+  toolCallMessageId: string,
+): TamboThreadMessage | null {
+  if (!messages?.length) return null;
+
+  const direct = messages.find(
+    (m: TamboThreadMessage) => m.role === "tool" && m.parentMessageId === toolCallMessageId,
+  );
+  if (direct) return direct;
+
+  const currentMessageIndex = messages.findIndex(
+    (m: TamboThreadMessage) => m.id === toolCallMessageId,
+  );
+  if (currentMessageIndex === -1) return null;
+
+  for (let i = currentMessageIndex + 1; i < messages.length; i++) {
+    const nextMessage = messages[i];
+    if (nextMessage.role === "tool") {
+      return nextMessage;
+    }
+    if (nextMessage.role === "assistant" && getToolCallRequest(nextMessage)) {
+      break;
+    }
+  }
+
+  return null;
+}
+
 // --- Sub-Components ---
 
 /**
@@ -435,24 +464,7 @@ const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
     const toolDetailsId = React.useId();
 
     const associatedToolResponse = React.useMemo(() => {
-      if (!thread?.messages) return null;
-      const currentMessageIndex = thread.messages.findIndex(
-        (m: TamboThreadMessage) => m.id === message.id,
-      );
-      if (currentMessageIndex === -1) return null;
-      for (let i = currentMessageIndex + 1; i < thread.messages.length; i++) {
-        const nextMessage = thread.messages[i];
-        if (nextMessage.role === "tool") {
-          return nextMessage;
-        }
-        if (
-          nextMessage.role === "assistant" &&
-          getToolCallRequest(nextMessage)
-        ) {
-          break;
-        }
-      }
-      return null;
+      return getAssociatedToolResponse(thread?.messages, message.id);
     }, [message, thread?.messages]);
 
     if (message.role !== "assistant" || !getToolCallRequest(message)) {
@@ -1006,7 +1018,14 @@ function inferRenderedComponentFromTool(
     try {
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== "object") return null;
-      return <NVLGraphExplorer {...(parsed as any)} className="w-full h-[520px] md:h-[600px] max-w-full" />;
+      return (
+        <div key={`nvl-${toolResponse?.id}`}>
+          <NVLGraphExplorer
+            {...(parsed as any)}
+            className="w-full h-[520px] md:h-[600px] max-w-full"
+          />
+        </div>
+      );
     } catch {
       return null;
     }
@@ -1062,9 +1081,9 @@ function inferRenderedComponentFromTool(
       });
 
       return (
-        <div className="space-y-3">
+        <div key={`risk-${toolResponse?.id}`} className="space-y-3">
           {Object.values(riskGroups).map((riskCard: any, index: number) => (
-            <RiskCard key={index} {...riskCard} />
+            <RiskCard key={`${toolResponse?.id}-${index}`} {...riskCard} />
           ))}
         </div>
       );
@@ -1089,6 +1108,9 @@ const MessageRenderedComponentArea = React.forwardRef<
   const { message, role } = useMessageContext();
   const [canvasExists, setCanvasExists] = React.useState(false);
   const { thread } = useTambo();
+  const [cachedInferred, setCachedInferred] = React.useState<React.ReactNode | null>(null);
+  const cachedMessageIdRef = React.useRef<string | null>(null);
+  const cachedToolResponseIdRef = React.useRef<string | null>(null);
 
   // Check if canvas exists on mount and window resize
   React.useEffect(() => {
@@ -1113,31 +1135,51 @@ const MessageRenderedComponentArea = React.forwardRef<
     return null;
   }
 
-  const inferredComponent = React.useMemo(() => {
-    if (message.renderedComponent) return null;
-    const toolCall = getToolCallRequest(message);
-    const toolName = toolCall?.toolName;
-    if (!toolName || !thread?.messages) return null;
+  React.useEffect(() => {
+    if (message.renderedComponent) return;
+    if (!thread?.messages) return;
 
-    const currentMessageIndex = thread.messages.findIndex(
-      (m: TamboThreadMessage) => m.id === message.id,
-    );
-    if (currentMessageIndex === -1) return null;
-
-    let toolResponse: TamboThreadMessage | null = null;
-    for (let i = currentMessageIndex + 1; i < thread.messages.length; i++) {
-      const nextMessage = thread.messages[i];
-      if (nextMessage.role === "tool") {
-        toolResponse = nextMessage;
-        break;
-      }
-      if (nextMessage.role === "assistant" && getToolCallRequest(nextMessage)) {
-        break;
-      }
+    if (cachedMessageIdRef.current !== message.id) {
+      cachedMessageIdRef.current = message.id;
+      setCachedInferred(null);
+      cachedToolResponseIdRef.current = null;
     }
 
-    return inferRenderedComponentFromTool(toolName, toolResponse);
-  }, [message, thread?.messages]);
+    if (cachedInferred) return;
+
+    const toolCall = getToolCallRequest(message);
+    const toolName = toolCall?.toolName;
+    if (!toolName) return;
+
+    let toolResponse: TamboThreadMessage | null = null;
+    if (cachedToolResponseIdRef.current) {
+      toolResponse =
+        thread.messages.find(
+          (m: TamboThreadMessage) => m.id === cachedToolResponseIdRef.current,
+        ) ?? null;
+    }
+
+    if (!toolResponse) {
+      toolResponse = getAssociatedToolResponse(thread.messages, message.id);
+    }
+
+    if (!toolResponse?.id) return;
+
+    if (
+      cachedToolResponseIdRef.current != null &&
+      cachedToolResponseIdRef.current !== toolResponse.id
+    ) {
+      return;
+    }
+
+    const inferred = inferRenderedComponentFromTool(toolName, toolResponse);
+    if (inferred) {
+      cachedToolResponseIdRef.current = toolResponse.id;
+      setCachedInferred(inferred);
+    }
+  }, [message.id, message.renderedComponent, thread?.messages, cachedInferred]);
+
+  const inferredComponent = message.renderedComponent ? null : cachedInferred;
 
   if (!message.renderedComponent && !inferredComponent) {
     return null;
